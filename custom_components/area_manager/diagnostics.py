@@ -48,6 +48,12 @@ def _async_get_diagnostics(
     _LOGGER.debug("Getting diagnostic information")
 
     data = manager.api.data
+    config_data = manager.storage_api.data
+
+    data["config"] = {}
+
+    for config_data_key in config_data:
+        data["config"][config_data_key] = config_data[config_data_key]
 
     data["disabled_by"] = entry.disabled_by
     data["disabled_polling"] = entry.pref_disable_polling

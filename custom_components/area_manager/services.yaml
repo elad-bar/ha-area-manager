@@ -1,44 +1,70 @@
-update_configuration:
-  name: Update configuration
-  description: Update configuration of EdgeOS integration
+set_area_type:
+  name: Set area type
+  description: Add area type
   fields:
-    consider_away_interval:
-      name: Consider away interval
-      description: Time to consider a device without activity as AWAY
-      required: false
-      example: "180"
+    type:
+      name: Type
+      required: true
+      example: "Bedroom"
       selector:
-        number:
-          min: 10
-          max: 1800
-          unit_of_measurement: seconds
-          mode: box
-    update_api_interval:
-      name: Update API interval
-      description: Interval in seconds to update API data
-      required: false
-      example: "30"
+        text:
+
+remove_area_type:
+  name: Remove area type
+  fields:
+    type:
+      name: Type
+      required: true
+      example: "Bedroom"
       selector:
-        number:
-          min: 30
-          max: 180
-          unit_of_measurement: seconds
-          mode: box
-    update_entities_interval:
-      name: Update Entities interval
-      description: Interval in seconds to update entities
-      required: false
-      example: "1"
+        text:
+
+set_entity:
+  name: Set area entity
+  description: Add or update area entity
+  fields:
+    name:
+      name: Name
+      required: true
+      example: "Security Status"
       selector:
-        number:
-          min: 1
-          max: 60
-          unit_of_measurement: seconds
-          mode: box
-    log_incoming_messages:
-      name: Log incoming messages
-      description: Enable / Disable logging of incoming WebSocket messages for debug
-      required: false
-      example: "false"
+        text:
+    domain:
+      name: Domain
+      required: true
+      example: "binary_sensor"
       selector:
-        boolean:
+        select:
+          options:
+            - label: Binary Sensor
+              value: binary_sensor
+            - label: Camera
+              value: camera
+            - label: Cover
+              value: cover
+            - label: Light
+              value: light
+            - label: Sensor
+              value: sensor
+            - label: Switch
+              value: switch
+    attributes:
+      name: Attributes
+      required: true
+      example:
+        - name: device_class
+          values:
+            - smoke
+            - gas
+      selector:
+        object:
+
+remove_entity:
+  name: Remove area entity
+  fields:
+    type:
+      name: Type
+      required: true
+      example: "Security Status"
+      selector:
+        text:

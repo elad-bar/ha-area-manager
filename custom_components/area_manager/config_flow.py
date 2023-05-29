@@ -6,10 +6,10 @@ import logging
 from cryptography.fernet import InvalidToken
 import voluptuous as vol
 
+from custom_components.area_manager.managers.api import IntegrationAPI
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 
-from .component.api.api import IntegrationAPI
 from .configuration.helpers.const import DEFAULT_NAME, DOMAIN
 from .configuration.helpers.exceptions import AlreadyExistsError, LoginError
 from .configuration.managers.configuration_manager import ConfigurationManager

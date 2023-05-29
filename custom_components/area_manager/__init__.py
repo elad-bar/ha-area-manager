@@ -1,14 +1,13 @@
-"""
-Init.
-"""
 import logging
 import sys
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .component.helpers import async_set_ha, clear_ha, get_ha
-from .configuration.helpers.const import DOMAIN
+from .common.consts import ALL_ENTITIES, DOMAIN
+from .managers.aqua_temp_api import AquaTempAPI
+from .managers.ha_config_manager import AquaTempConfigManager
+from .managers.ha_coordinator import AquaTempCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,14 +17,39 @@ async def async_setup(hass, config):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a component."""
+    """Set up a Shinobi Video component."""
     initialized = False
 
     try:
-        _LOGGER.debug(f"Starting async_setup_entry of {DOMAIN}")
-        entry.add_update_listener(async_options_updated)
+        config_manager = AquaTempConfigManager(hass, entry)
+        await config_manager.initialize()
 
-        await async_set_ha(hass, entry)
+        api = AquaTempAPI(hass, config_manager)
+        await api.initialize()
+
+        await api.update()
+
+        coordinator = AquaTempCoordinator(hass, api, config_manager)
+
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+        await coordinator.async_config_entry_first_refresh()
+
+        _LOGGER.info("Finished loading integration")
+
+        platforms = []
+        for entity_description in ALL_ENTITIES:
+            if (
+                entity_description.platform not in platforms
+                and entity_description.platform is not None
+            ):
+                platforms.append(entity_description.platform)
+
+        _LOGGER.debug(f"Loading platforms: {platforms}")
+
+        await hass.config_entries.async_forward_entry_setups(entry, platforms)
+
+        _LOGGER.info("Finished loading components")
 
         initialized = True
 
@@ -33,28 +57,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         exc_type, exc_obj, tb = sys.exc_info()
         line_number = tb.tb_lineno
 
-        _LOGGER.error(f"Failed to load integration, error: {ex}, line: {line_number}")
+        _LOGGER.error(f"Failed to load Aqua Temp, error: {ex}, line: {line_number}")
 
     return initialized
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
-    ha = get_ha(hass, entry.entry_id)
-
-    if ha is not None:
-        await ha.async_remove(entry)
-
-    clear_ha(hass, entry.entry_id)
+    del hass.data[DOMAIN][entry.entry_id]
 
     return True
-
-
-async def async_options_updated(hass: HomeAssistant, entry: ConfigEntry):
-    """Triggered by config entry options updates."""
-    _LOGGER.info(f"async_options_updated, Entry: {entry.as_dict()} ")
-
-    ha = get_ha(hass, entry.entry_id)
-
-    if ha is not None:
-        await ha.async_update_entry(entry)

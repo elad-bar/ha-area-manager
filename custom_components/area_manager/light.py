@@ -5,21 +5,28 @@ from __future__ import annotations
 
 import logging
 import sys
+from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.light import LightEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_NAME, ATTR_STATE, Platform
+from homeassistant.const import (
+    ATTR_NAME,
+    ATTR_STATE,
+    STATE_ON,
+    STATE_UNAVAILABLE,
+    Platform,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
-from .common.consts import DOMAIN
-from .common.entity_descriptions import HASensorEntityDescription
+from .common.consts import ALLOWED_STATE_TRANSITIONS, DOMAIN
+from .common.entity_descriptions import HALightEntityDescription
 from .managers.ha_coordinator import HACoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-_PLATFORM = Platform.SENSOR
+_PLATFORM = Platform.LIGHT
 
 
 async def async_setup_entry(
@@ -33,7 +40,7 @@ async def async_setup_entry(
 
         for entity_description in entity_descriptions:
             for area_id in coordinator.areas:
-                entity = HASensorEntity(area_id, entity_description, coordinator)
+                entity = HALightEntity(area_id, entity_description, coordinator)
 
                 entities.append(entity)
 
@@ -50,13 +57,13 @@ async def async_setup_entry(
         )
 
 
-class HASensorEntity(CoordinatorEntity, SensorEntity):
-    """Representation of a sensor."""
+class HALightEntity(CoordinatorEntity, LightEntity):
+    """Representation of a switch."""
 
     def __init__(
         self,
         area_id: str,
-        entity_description: HASensorEntityDescription,
+        entity_description: HALightEntityDescription,
         coordinator: HACoordinator,
     ):
         super().__init__(coordinator)
@@ -67,7 +74,7 @@ class HASensorEntity(CoordinatorEntity, SensorEntity):
 
         unique_id = slugify(f"{entity_description.platform} {entity_name} {area_id}")
 
-        self.entity_description: HASensorEntityDescription = entity_description
+        self.entity_description: HALightEntityDescription = entity_description
         self._area_id = area_id
         self._attr_device_info = coordinator.get_device_info()
         self._attr_name = entity_name
@@ -83,7 +90,7 @@ class HASensorEntity(CoordinatorEntity, SensorEntity):
             self._area_id, self.entity_description
         )
 
-        native_value = None
+        state = STATE_UNAVAILABLE if len(entities) == 0 else STATE_ON
 
         for entity in entities:
             entity_state = entity[ATTR_STATE]
@@ -91,10 +98,28 @@ class HASensorEntity(CoordinatorEntity, SensorEntity):
 
             attributes[entity_name] = entity_state.state
 
-            if native_value is None:
-                native_value = entity_state.state
+            state = self.get_light_state(state, entity_state.state)
 
-        self._attr_native_value = native_value
+        self._attr_is_on = None if state == STATE_UNAVAILABLE else state
         self._attr_extra_state_attributes = attributes
 
         self.async_write_ha_state()
+
+    @staticmethod
+    def get_light_state(current: str, state: str):
+        allowed_state_transitions = ALLOWED_STATE_TRANSITIONS.get(current, [])
+
+        if len(allowed_state_transitions) > 0 and state in allowed_state_transitions:
+            current = state
+
+        return current
+
+    def turn_on(self, **kwargs: Any) -> None:
+        value = kwargs.get(ATTR_STATE)
+
+        self.coordinator.set_state(self._area_id, value, self.entity_description)
+
+    def turn_off(self, **kwargs: Any) -> None:
+        value = kwargs.get(ATTR_STATE)
+
+        self.coordinator.set_state(self._area_id, value, self.entity_description)
