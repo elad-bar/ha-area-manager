@@ -47,29 +47,50 @@ class HALightEntityDescription(LightEntityDescription, BaseEntityDescription):
 
 
 def get_entity_description(
-    platform: Platform, name: str, attributes: dict[str, list[Any]] | None = None
+    platform: Platform,
+    name: str,
+    include_nested: bool,
+    attributes: dict[str, list[Any]] | None = None,
 ):
     if platform == Platform.SELECT:
         return HASelectEntityDescription(
-            key=slugify(name), name=name, attributes=attributes
+            key=slugify(name),
+            name=name,
+            attributes=attributes,
+            include_nested=include_nested,
         )
     if platform == Platform.LIGHT:
         return HALightEntityDescription(
-            key=slugify(name), name=name, attributes=attributes
+            key=slugify(name),
+            name=name,
+            attributes=attributes,
+            include_nested=include_nested,
         )
     if platform == Platform.SWITCH:
         return HASwitchEntityDescription(
-            key=slugify(name), name=name, attributes=attributes
+            key=slugify(name),
+            name=name,
+            attributes=attributes,
+            include_nested=include_nested,
         )
     if platform == Platform.SENSOR:
         return HASensorEntityDescription(
-            key=slugify(name), name=name, attributes=attributes
+            key=slugify(name),
+            name=name,
+            attributes=attributes,
+            include_nested=include_nested,
         )
     if platform == Platform.BINARY_SENSOR:
         return HABinarySensorEntityDescription(
-            key=slugify(name), name=name, attributes=attributes
+            key=slugify(name),
+            name=name,
+            attributes=attributes,
+            include_nested=include_nested,
         )
     else:
         return BaseEntityDescription(
-            key=slugify(name), name=name, attributes=attributes
+            key=slugify(name),
+            name=name,
+            attributes=attributes,
+            include_nested=include_nested,
         )

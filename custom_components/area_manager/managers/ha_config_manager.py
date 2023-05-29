@@ -6,9 +6,11 @@ from homeassistant.const import ATTR_DOMAIN, ATTR_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.json import JSONEncoder
 from homeassistant.helpers.storage import Store
+from homeassistant.util import slugify
 
 from ..common.consts import (
     ATTR_ATTRIBUTES,
+    ATTR_INCLUDE_NESTED,
     CONF_AREA_PARENT,
     DOMAIN,
     STORAGE_DATA_AREA_ATTRIBUTES,
@@ -126,30 +128,34 @@ class HAConfigManager:
         await self._save()
 
     async def set_area_entity(
-        self, name: str, domain: str, attribute: str, values: list[str]
+        self,
+        name: str,
+        domain: str,
+        include_nested: bool,
+        attribute: str,
+        values: list[str],
     ):
         _LOGGER.debug(f"Set area entity: {name}, domain: {domain}, values: {values}")
 
-        attribute_key = name.lower()
+        entity_key = slugify(name)
 
         entity = self.area_entities.get(
-            attribute_key, {ATTR_NAME: name, ATTR_DOMAIN: domain, ATTR_ATTRIBUTES: {}}
+            entity_key, {ATTR_NAME: name, ATTR_ATTRIBUTES: {}}
         )
 
-        self.area_entities[attribute_key][ATTR_ATTRIBUTES][attribute] = entity
+        self.area_entities[entity_key][ATTR_DOMAIN] = domain
+        self.area_entities[entity_key][ATTR_INCLUDE_NESTED] = include_nested
+        self.area_entities[entity_key][ATTR_ATTRIBUTES][attribute] = entity
 
         await self._save()
 
     async def remove_area_entity(self, name: str):
         _LOGGER.debug(f"Remove area entity: {name}")
 
-        attribute_key = name.lower()
+        entity_key = slugify(name)
 
-        if attribute_key == CONF_AREA_PARENT.lower():
-            raise SystemAttributeError(name)
-
-        if attribute_key in self.area_entities:
-            self.area_entities.pop(attribute_key)
+        if entity_key in self.area_entities:
+            self.area_entities.pop(entity_key)
 
         await self._save()
 

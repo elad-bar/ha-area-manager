@@ -38,6 +38,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from ..common.consts import (
     ATTR_ATTRIBUTE,
     ATTR_ATTRIBUTES,
+    ATTR_INCLUDE_NESTED,
     ATTR_VALUES,
     CONF_AREA_PARENT,
     DATA_CONFIG,
@@ -55,6 +56,7 @@ from ..common.consts import (
 from ..common.entity_descriptions import (
     BaseEntityDescription,
     HASelectEntityDescription,
+    get_entity_description,
 )
 from .ha_config_manager import HAConfigManager
 
@@ -252,6 +254,19 @@ class HACoordinator(DataUpdateCoordinator):
 
             entity_descriptions.append(entity_description)
 
+        for entity_key in self._config_manager.area_entities:
+            entity_details = self._config_manager.area_entities[entity_key]
+            name = entity_details.get(ATTR_NAME)
+            domain = entity_details.get(ATTR_DOMAIN)
+            attributes = entity_details.get(ATTR_ATTRIBUTES)
+            include_nested = entity_details.get(ATTR_INCLUDE_NESTED, False)
+
+            entity_description = get_entity_description(
+                domain, name, attributes, include_nested
+            )
+
+            entity_descriptions.append(entity_description)
+
         return entity_descriptions
 
     def get_related_entities(
@@ -381,8 +396,11 @@ class HACoordinator(DataUpdateCoordinator):
         domain = data.get(ATTR_DOMAIN)
         attribute = data.get(ATTR_ATTRIBUTE)
         values = data.get(ATTR_VALUES)
+        include_nested = data.get(ATTR_INCLUDE_NESTED, False)
 
-        await self._config_manager.set_area_entity(name, domain, attribute, values)
+        await self._config_manager.set_area_entity(
+            name, domain, include_nested, attribute, values
+        )
 
     async def _async_handle_service_remove_area_entity(self, service_call):
         data = service_call.data

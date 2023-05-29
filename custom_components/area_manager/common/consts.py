@@ -27,6 +27,7 @@ DATA_HA = "ha-data"
 ATTR_FRIENDLY_NAME = "friendly_name"
 ATTR_ATTRIBUTES = "attributes"
 ATTR_ATTRIBUTE = "attribute"
+ATTR_INCLUDE_NESTED = "include_nested"
 ATTR_VALUES = "values"
 
 CONF_NESTED_AREA_ID = "nested_area_id"
@@ -54,7 +55,7 @@ SERVICE_REMOVE_AREA_ATTRIBUTE = "remove_attribute"
 SERVICE_SET_AREA_ENTITY = "set_entity"
 SERVICE_REMOVE_AREA_ENTITY = "remove_entity"
 
-SERVICE_SCHEMA_ATTRIBUTE = vol.Schema(
+SERVICE_SCHEMA_SET_AREA_ATTRIBUTE = vol.Schema(
     {
         vol.Required(ATTR_NAME): cv.string,
         vol.Required(ATTR_VALUES): vol.All(cv.ensure_list, [cv.string]),
@@ -67,22 +68,13 @@ SERVICE_SCHEMA_SET_AREA_ENTITY = vol.Schema(
         vol.Required(ATTR_DOMAIN): cv.entity_domain(
             [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.LIGHT, Platform.SWITCH]
         ),
+        vol.Required(ATTR_INCLUDE_NESTED): cv.boolean,
         vol.Required(ATTR_ATTRIBUTE): cv.string,
         vol.Required(ATTR_VALUES): vol.All(cv.ensure_list, [cv.string]),
     }
 )
 
 SERVICE_SCHEMA_REMOVE_AREA_X = vol.Schema({vol.Required(ATTR_NAME): cv.string})
-
-SERVICE_SCHEMA_SET_AREA_ATTRIBUTE = vol.Schema(
-    {
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Required(ATTR_DOMAIN): cv.string,
-        vol.Required(ATTR_ATTRIBUTES): vol.All(
-            cv.ensure_list, [SERVICE_SCHEMA_ATTRIBUTE]
-        ),
-    }
-)
 
 ALLOWED_STATE_TRANSITIONS = {
     STATE_OFF: [STATE_ON, STATE_UNAVAILABLE],

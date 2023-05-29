@@ -1,36 +1,42 @@
-set_area_type:
-  name: Set area type
-  description: Add area type
+set_area_attribute:
+  name: Set area attribute
+  description: Set area attribute
   fields:
-    type:
-      name: Type
+    name:
+      name: name
       required: true
-      example: "Bedroom"
+      example: "Location"
       selector:
         text:
+    values:
+      name: name
+      required: true
+      example: "[Indoor, Outdoor]"
+      selector:
+        object:
 
-remove_area_type:
+remove_area_attribute:
   name: Remove area type
-  fields:
-    type:
-      name: Type
-      required: true
-      example: "Bedroom"
-      selector:
-        text:
-
-set_entity:
-  name: Set area entity
-  description: Add or update area entity
   fields:
     name:
       name: Name
+      required: true
+      example: "Location"
+      selector:
+        text:
+
+set_area_entity:
+  name: Set area entity
+  description: Set area entity
+  fields:
+    name:
+      name: name
       required: true
       example: "Security Status"
       selector:
         text:
     domain:
-      name: Domain
+      name: domain
       required: true
       example: "binary_sensor"
       selector:
@@ -38,32 +44,32 @@ set_entity:
           options:
             - label: Binary Sensor
               value: binary_sensor
-            - label: Camera
-              value: camera
-            - label: Cover
-              value: cover
-            - label: Light
-              value: light
             - label: Sensor
               value: sensor
             - label: Switch
               value: switch
-    attributes:
-      name: Attributes
+            - label: Select
+              value: select
+            - label: Light
+              value: light
+    attribute:
+      name: attribute
       required: true
-      example:
-        - name: device_class
-          values:
-            - smoke
-            - gas
+      example: "device_class"
+      selector:
+        text:
+    values:
+      name: name
+      required: true
+      example: "[motion, sound]"
       selector:
         object:
 
-remove_entity:
+remove_area_entity:
   name: Remove area entity
   fields:
-    type:
-      name: Type
+    name:
+      name: Name
       required: true
       example: "Security Status"
       selector:
