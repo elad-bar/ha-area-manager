@@ -5,14 +5,12 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .component.helpers import get_ha
-from .component.managers.home_assistant import AreaHomeAssistantManager
-from .configuration.helpers.const import DOMAIN
+from .common.consts import DOMAIN
+from .managers.ha_coordinator import HACoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,65 +21,70 @@ async def async_get_config_entry_diagnostics(
     """Return diagnostics for a config entry."""
     _LOGGER.debug("Starting diagnostic tool")
 
-    manager = get_ha(hass, entry.entry_id)
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    return _async_get_diagnostics(hass, manager, entry)
+    return _async_get_diagnostics(hass, coordinator, entry)
 
 
 async def async_get_device_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry, device: DeviceEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a device entry."""
-    manager = get_ha(hass, entry.entry_id)
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    return _async_get_diagnostics(hass, manager, entry, device)
+    return _async_get_diagnostics(hass, coordinator, entry, device)
 
 
 @callback
 def _async_get_diagnostics(
     hass: HomeAssistant,
-    manager: AreaHomeAssistantManager,
+    coordinator: HACoordinator,
     entry: ConfigEntry,
     device: DeviceEntry | None = None,
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
     _LOGGER.debug("Getting diagnostic information")
 
-    data = manager.api.data
-    config_data = manager.storage_api.data
+    config_data = coordinator.config_data
 
-    data["config"] = {}
-
-    for config_data_key in config_data:
-        data["config"][config_data_key] = config_data[config_data_key]
-
-    data["disabled_by"] = entry.disabled_by
-    data["disabled_polling"] = entry.pref_disable_polling
-
-    if CONF_PASSWORD in data:
-        data.pop(CONF_PASSWORD)
+    data = {
+        "areas": coordinator.areas,
+        "config": config_data,
+        "disabled_by": entry.disabled_by,
+        "disabled_polling": entry.pref_disable_polling,
+    }
 
     if device:
-        device_name = next(iter(device.identifiers))[1]
+        device_area_id = next(iter(device.identifiers))[1]
 
-        data.update(device_name)
+        for area_id in coordinator.areas:
+            area_details = coordinator.areas.get(area_id)
 
-    else:
-        _LOGGER.debug("Getting diagnostic information for all devices")
+            if area_id == device_area_id:
+                data |= _async_device_as_dict(hass, area_id, area_details)
 
-        data.update()
+    _LOGGER.debug("Getting diagnostic information for all devices")
+
+    data.update(
+        devices=[
+            _async_device_as_dict(hass, area_id, coordinator.areas.get(area_id))
+            for area_id in coordinator.areas
+        ]
+    )
 
     return data
 
 
 @callback
 def _async_device_as_dict(
-    hass: HomeAssistant, data: dict, unique_id: str
+    hass: HomeAssistant, area_id: str, area_details: dict
 ) -> dict[str, Any]:
     """Represent a Shinobi monitor as a dictionary."""
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
-    ha_device = device_registry.async_get_device(identifiers={(DOMAIN, unique_id)})
+
+    ha_device = device_registry.async_get_device(identifiers={(DOMAIN, area_id)})
+    data = {}
 
     if ha_device:
         data["home_assistant"] = {
@@ -89,6 +92,7 @@ def _async_device_as_dict(
             "name_by_user": ha_device.name_by_user,
             "disabled": ha_device.disabled,
             "disabled_by": ha_device.disabled_by,
+            "data": area_details,
             "entities": [],
         }
 

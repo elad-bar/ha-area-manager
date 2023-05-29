@@ -69,7 +69,7 @@ class HASensorEntity(CoordinatorEntity, SensorEntity):
 
         self.entity_description: HASensorEntityDescription = entity_description
         self._area_id = area_id
-        self._attr_device_info = coordinator.get_device_info()
+        self._attr_device_info = coordinator.get_device_info(area_id)
         self._attr_name = entity_name
         self._attr_unique_id = unique_id
         self._attr_device_class = entity_description.device_class

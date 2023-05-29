@@ -158,11 +158,11 @@ class HACoordinator(DataUpdateCoordinator):
 
         await self.async_request_refresh()
 
-    @staticmethod
-    def get_device_info() -> DeviceInfo:
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, "system")}, name="HA Area Manager"
-        )
+    def get_device_info(self, area_id: str) -> DeviceInfo:
+        area_details = self.areas.get(area_id)
+        area_name = area_details.get(ATTR_NAME)
+
+        device_info = DeviceInfo(identifiers={(DOMAIN, area_id)}, name=area_name)
 
         return device_info
 

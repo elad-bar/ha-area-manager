@@ -5,9 +5,6 @@ from datetime import timedelta
 
 import voluptuous as vol
 
-from custom_components.area_manager.common.entity_descriptions import (
-    HASelectEntityDescription,
-)
 from homeassistant.const import (
     ATTR_DOMAIN,
     ATTR_NAME,
@@ -18,6 +15,8 @@ from homeassistant.const import (
     Platform,
 )
 import homeassistant.helpers.config_validation as cv
+
+from .entity_descriptions import HASelectEntityDescription
 
 DOMAIN = "area_manager"
 
