@@ -59,28 +59,28 @@ def get_entity_description(
             attributes=attributes,
             include_nested=include_nested,
         )
-    if platform == Platform.LIGHT:
+    elif platform == Platform.LIGHT:
         return HALightEntityDescription(
             key=slugify(name),
             name=name,
             attributes=attributes,
             include_nested=include_nested,
         )
-    if platform == Platform.SWITCH:
+    elif platform == Platform.SWITCH:
         return HASwitchEntityDescription(
             key=slugify(name),
             name=name,
             attributes=attributes,
             include_nested=include_nested,
         )
-    if platform == Platform.SENSOR:
+    elif platform == Platform.SENSOR:
         return HASensorEntityDescription(
             key=slugify(name),
             name=name,
             attributes=attributes,
             include_nested=include_nested,
         )
-    if platform == Platform.BINARY_SENSOR:
+    elif platform == Platform.BINARY_SENSOR:
         return HABinarySensorEntityDescription(
             key=slugify(name),
             name=name,

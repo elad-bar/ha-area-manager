@@ -6,6 +6,7 @@ from typing import Any
 
 import async_timeout
 
+from homeassistant.components.homeassistant import SERVICE_RELOAD_CONFIG_ENTRY
 from homeassistant.components.select import ATTR_OPTIONS
 from homeassistant.const import (
     ATTR_AREA_ID,
@@ -45,13 +46,15 @@ from ..common.consts import (
     DATA_HA,
     DEFAULT_ENTITY_DESCRIPTIONS,
     DOMAIN,
-    SERVICE_REMOVE_AREA_ATTRIBUTE,
-    SERVICE_REMOVE_AREA_ENTITY,
+    ENTITY_CONFIG_ENTRY_ID,
+    HA_NAME,
+    SERVICE_REMOVE_ATTRIBUTE,
+    SERVICE_REMOVE_ENTITY,
     SERVICE_SCHEMA_REMOVE_AREA_X,
-    SERVICE_SCHEMA_SET_AREA_ATTRIBUTE,
-    SERVICE_SCHEMA_SET_AREA_ENTITY,
-    SERVICE_SET_AREA_ATTRIBUTE,
-    SERVICE_SET_AREA_ENTITY,
+    SERVICE_SCHEMA_SET_ATTRIBUTE,
+    SERVICE_SCHEMA_SET_ENTITY,
+    SERVICE_SET_ATTRIBUTE,
+    SERVICE_SET_ENTITY,
 )
 from ..common.entity_descriptions import (
     BaseEntityDescription,
@@ -331,28 +334,28 @@ class HACoordinator(DataUpdateCoordinator):
     def _register_services(self):
         self.hass.services.async_register(
             DOMAIN,
-            SERVICE_SET_AREA_ATTRIBUTE,
+            SERVICE_SET_ATTRIBUTE,
             self._handle_service_set_area_attribute,
-            SERVICE_SCHEMA_SET_AREA_ATTRIBUTE,
+            SERVICE_SCHEMA_SET_ATTRIBUTE,
         )
 
         self.hass.services.async_register(
             DOMAIN,
-            SERVICE_REMOVE_AREA_ATTRIBUTE,
+            SERVICE_REMOVE_ATTRIBUTE,
             self._handle_service_remove_area_attribute,
             SERVICE_SCHEMA_REMOVE_AREA_X,
         )
 
         self.hass.services.async_register(
             DOMAIN,
-            SERVICE_SET_AREA_ENTITY,
+            SERVICE_SET_ENTITY,
             self._handle_service_set_area_entity,
-            SERVICE_SCHEMA_SET_AREA_ENTITY,
+            SERVICE_SCHEMA_SET_ENTITY,
         )
 
         self.hass.services.async_register(
             DOMAIN,
-            SERVICE_REMOVE_AREA_ENTITY,
+            SERVICE_REMOVE_ENTITY,
             self._handle_service_remove_area_entity,
             SERVICE_SCHEMA_REMOVE_AREA_X,
         )
@@ -384,11 +387,15 @@ class HACoordinator(DataUpdateCoordinator):
 
         await self._config_manager.set_area_attribute(name, options)
 
+        await self._reload_integration()
+
     async def _async_handle_service_remove_area_attribute(self, service_call):
         data = service_call.data
         name = data.get(ATTR_NAME)
 
         await self._config_manager.remove_area_attribute(name)
+
+        await self._reload_integration()
 
     async def _async_handle_service_set_area_entity(self, service_call):
         data = service_call.data
@@ -402,11 +409,15 @@ class HACoordinator(DataUpdateCoordinator):
             name, domain, include_nested, attribute, values
         )
 
+        await self._reload_integration()
+
     async def _async_handle_service_remove_area_entity(self, service_call):
         data = service_call.data
         name = data.get(ATTR_NAME)
 
         await self._config_manager.remove_area_entity(name)
+
+        await self._reload_integration()
 
     def set_state(
         self, area_id: str, value: Any, entity_description: BaseEntityDescription
@@ -415,6 +426,11 @@ class HACoordinator(DataUpdateCoordinator):
         self.hass.async_create_task(
             self._async_set_state(area_id, value, entity_description)
         )
+
+    async def _reload_integration(self):
+        data = {ENTITY_CONFIG_ENTRY_ID: self.config_entry.entry_id}
+
+        await self.hass.services.async_call(HA_NAME, SERVICE_RELOAD_CONFIG_ENTRY, data)
 
     async def _async_set_state(
         self, area_id: str, value: Any, entity_description: BaseEntityDescription

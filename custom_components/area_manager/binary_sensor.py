@@ -78,7 +78,6 @@ class HABinarySensorEntity(CoordinatorEntity, BinarySensorEntity):
         self._attr_device_info = coordinator.get_device_info(area_id)
         self._attr_name = entity_name
         self._attr_unique_id = unique_id
-        self._attr_device_class = entity_description.device_class
 
     @callback
     def _handle_coordinator_update(self) -> None:

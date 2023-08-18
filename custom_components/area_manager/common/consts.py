@@ -22,6 +22,7 @@ DOMAIN = "area_manager"
 
 DATA_CONFIG = "config-data"
 DATA_HA = "ha-data"
+HA_NAME = "homeassistant"
 
 ATTR_FRIENDLY_NAME = "friendly_name"
 ATTR_ATTRIBUTES = "attributes"
@@ -38,6 +39,8 @@ DEFAULT_UPDATE_ENTITIES_INTERVAL = timedelta(seconds=1)
 DEFAULT_HEARTBEAT_INTERVAL = timedelta(seconds=50)
 DEFAULT_CONSIDER_AWAY_INTERVAL = timedelta(minutes=3)
 
+ENTITY_CONFIG_ENTRY_ID = "entry_id"
+
 STORAGE_DATA_FILE_CONFIG = "config"
 
 STORAGE_DATA_FILES = [STORAGE_DATA_FILE_CONFIG]
@@ -49,19 +52,19 @@ API_DATA_LAST_UPDATE = "lastUpdate"
 
 AREA_NESTED = "nested"
 
-SERVICE_SET_AREA_ATTRIBUTE = "set_attribute"
-SERVICE_REMOVE_AREA_ATTRIBUTE = "remove_attribute"
-SERVICE_SET_AREA_ENTITY = "set_entity"
-SERVICE_REMOVE_AREA_ENTITY = "remove_entity"
+SERVICE_SET_ATTRIBUTE = "set_attribute"
+SERVICE_REMOVE_ATTRIBUTE = "remove_attribute"
+SERVICE_SET_ENTITY = "set_entity"
+SERVICE_REMOVE_ENTITY = "remove_entity"
 
-SERVICE_SCHEMA_SET_AREA_ATTRIBUTE = vol.Schema(
+SERVICE_SCHEMA_SET_ATTRIBUTE = vol.Schema(
     {
         vol.Required(ATTR_NAME): cv.string,
         vol.Required(ATTR_VALUES): vol.All(cv.ensure_list, [cv.string]),
     }
 )
 
-SERVICE_SCHEMA_SET_AREA_ENTITY = vol.Schema(
+SERVICE_SCHEMA_SET_ENTITY = vol.Schema(
     {
         vol.Required(ATTR_NAME): cv.string,
         vol.Required(ATTR_DOMAIN): cv.entity_domain(

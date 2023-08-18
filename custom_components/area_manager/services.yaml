@@ -1,6 +1,6 @@
-set_area_attribute:
-  name: Set area attribute
-  description: Set area attribute
+set_attribute:
+  name: Set attribute
+  description: Sets custom attribute for an area
   fields:
     name:
       name: name
@@ -15,8 +15,9 @@ set_area_attribute:
       selector:
         object:
 
-remove_area_attribute:
-  name: Remove area type
+remove_attribute:
+  name: Remove attribute
+  description: Removes custom attribute for an area
   fields:
     name:
       name: Name
@@ -25,9 +26,9 @@ remove_area_attribute:
       selector:
         text:
 
-set_area_entity:
-  name: Set area entity
-  description: Set area entity
+set_entity:
+  name: Set entity
+  description: Sets custom entity rule for an area
   fields:
     name:
       name: name
@@ -48,8 +49,6 @@ set_area_entity:
               value: sensor
             - label: Switch
               value: switch
-            - label: Select
-              value: select
             - label: Light
               value: light
     attribute:
@@ -64,9 +63,16 @@ set_area_entity:
       example: "[motion, sound]"
       selector:
         object:
+    include_nested:
+      name: Include Nested Areas
+      required: true
+      example: "True"
+      selector:
+        boolean:
 
-remove_area_entity:
-  name: Remove area entity
+remove_entity:
+  name: Remove entity
+  description: Removes custom entity rule for an area
   fields:
     name:
       name: Name
