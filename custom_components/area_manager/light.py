@@ -18,7 +18,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 
 from .common.base_entity import IntegrationBaseEntity, async_setup_base_entry
-from .common.consts import ALLOWED_STATE_TRANSITIONS, DOMAIN
+from .common.consts import ALLOWED_STATE_TRANSITIONS, ATTR_ATTRIBUTES, DOMAIN
 from .common.entity_descriptions import HALightEntityDescription
 from .managers.ha_coordinator import HACoordinator
 
@@ -63,6 +63,7 @@ class HALightEntity(IntegrationBaseEntity, LightEntity):
         )
 
         state = STATE_UNAVAILABLE if len(entities) == 0 else STATE_ON
+        entity_attributes = None
 
         for entity in entities:
             entity_state = entity[ATTR_STATE]
@@ -71,6 +72,12 @@ class HALightEntity(IntegrationBaseEntity, LightEntity):
             attributes[entity_name] = entity_state.state
 
             state = self.get_light_state(state, entity_state.state)
+
+            if entity_attributes is None:
+                entity_attributes = entity.get(ATTR_ATTRIBUTES)
+
+        if entity_attributes is not None:
+            attributes.update(entity_attributes)
 
         self._attr_is_on = None if state == STATE_UNAVAILABLE else state
         self._attr_extra_state_attributes = attributes

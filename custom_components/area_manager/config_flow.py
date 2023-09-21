@@ -21,7 +21,7 @@ class DomainFlowHandler(config_entries.ConfigFlow):
         """Handle a flow start."""
         _LOGGER.debug(f"Starting async_step_user of {DEFAULT_NAME}")
 
-        already_exists = False
+        already_exists = DOMAIN in self.hass.data
 
         if already_exists:
             errors = {"base": "already_configured"}

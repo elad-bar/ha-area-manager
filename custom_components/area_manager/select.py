@@ -94,7 +94,8 @@ class HASelectEntity(IntegrationBaseEntity, SelectEntity):
             option = areas_reverse.get(option)
 
             await self.coordinator.set_parent(self.area_id, option)
+
         else:
-            await self.coordinator.set_state(
+            await self.coordinator.set_area_details(
                 self.area_id, option, self.entity_description
             )

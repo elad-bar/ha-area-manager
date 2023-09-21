@@ -238,31 +238,30 @@ class HACoordinator(DataUpdateCoordinator):
     ) -> Any:
         return self._config_manager.get_area_details(area_id, entity_description.key)
 
+    async def set_area_details(
+        self, area_id: str, value: Any, entity_description: BaseEntityDescription
+    ) -> None:
+        await self._config_manager.set_area_details(
+            area_id, value, entity_description.key
+        )
+
+        await self.async_request_refresh()
+
     async def set_state(
         self, area_id: str, value: Any, entity_description: BaseEntityDescription
     ) -> None:
-        if entity_description.platform == Platform.SELECT:
-            await self._config_manager.set_area_details(
-                area_id, value, entity_description.key
+        entities = self.get_related_entities(area_id, entity_description)
+        entity_ids = [entity[ATTR_ENTITY_ID] for entity in entities]
+        service_data = {ATTR_ENTITY_ID: entity_ids}
+        service_name = None
+
+        if entity_description.platform in [Platform.SWITCH, Platform.LIGHT]:
+            service_name = SERVICE_TURN_ON if value == STATE_ON else SERVICE_TURN_OFF
+
+        if service_name is not None:
+            self.hass.services.call(
+                entity_description.platform, service_name, service_data
             )
-
-            await self.async_request_refresh()
-
-        else:
-            entities = self.get_related_entities(area_id, entity_description)
-            entity_ids = [entity[ATTR_ENTITY_ID] for entity in entities]
-            service_data = {ATTR_ENTITY_ID: entity_ids}
-            service_name = None
-
-            if entity_description.platform in [Platform.SWITCH, Platform.LIGHT]:
-                service_name = (
-                    SERVICE_TURN_ON if value == STATE_ON else SERVICE_TURN_OFF
-                )
-
-            if service_name is not None:
-                self.hass.services.call(
-                    entity_description.platform, service_name, service_data
-                )
 
     def get_related_entities(
         self, area_id: str, entity_description: BaseEntityDescription

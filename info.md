@@ -15,14 +15,21 @@ Integration to represent each Area as device, define parent area, set custom att
 
 ## How to
 
-#### Installations via HACS
+### Installation
 
-- In HACS, look for "Area Manager" and install and restart
-- In Settings --> Devices & Services - (Lower Right) "Add Integration"
+1. Add Custom Integration Repository
 
-#### Setup
+   Currently, integration is not officially available, please add the repo to HACS before trying to install it in HACS > Integrations > 3 dots menu > Custom repository
+   Repository: _elad-bar/ha-area-manager_
+   Category: _Integration_
 
-To add integration use Configuration -> Integrations -> Add `Area Manager`
+2. Install integration via HACS
+
+   In HACS, look for "Area Manager" and install and restart
+
+3. Setup HA integration
+
+   Settings > Devices & Services (Lower Right) > Add Integration > _Area Manager_
 
 ## Devices & Components
 

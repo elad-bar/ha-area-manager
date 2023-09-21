@@ -17,7 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import DOMAIN, HomeAssistant, callback
 
 from .common.base_entity import IntegrationBaseEntity, async_setup_base_entry
-from .common.consts import ALLOWED_STATE_TRANSITIONS
+from .common.consts import ALLOWED_STATE_TRANSITIONS, ATTR_ATTRIBUTES
 from .common.entity_descriptions import HABinarySensorEntityDescription
 from .managers.ha_coordinator import HACoordinator
 
@@ -62,14 +62,21 @@ class HABinarySensorEntity(IntegrationBaseEntity, BinarySensorEntity):
         )
 
         state = STATE_ON
+        entity_attributes = None
 
         for entity in entities:
-            entity_state = entity[ATTR_STATE]
-            entity_name = entity[ATTR_NAME]
+            entity_state = entity.get(ATTR_STATE)
+            entity_name = entity.get(ATTR_NAME)
 
             attributes[entity_name] = entity_state.state
 
             state = self.get_binary_state(state, entity_state.state)
+
+            if entity_attributes is None:
+                entity_attributes = entity.get(ATTR_ATTRIBUTES)
+
+        if entity_attributes is not None:
+            attributes.update(entity_attributes)
 
         self._attr_is_on = None if state == STATE_UNAVAILABLE else state
         self._attr_extra_state_attributes = attributes
