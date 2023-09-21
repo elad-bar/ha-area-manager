@@ -8,12 +8,11 @@ import sys
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_NAME, ATTR_STATE, Platform
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.util import slugify
 
-from .common.consts import ALLOWED_STATE_TRANSITIONS, DOMAIN
+from .common.base_entity import IntegrationBaseEntity, async_setup_base_entry
+from .common.consts import ATTR_PARENT
 from .common.entity_descriptions import HASelectEntityDescription
 from .managers.ha_coordinator import HACoordinator
 
@@ -25,88 +24,77 @@ _PLATFORM = Platform.SELECT
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ):
-    """Set up the sensor platform."""
-    try:
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        entities = []
-        entity_descriptions = coordinator.get_entity_descriptions(_PLATFORM)
-
-        for entity_description in entity_descriptions:
-            for area_id in coordinator.areas:
-                entity = HASelectEntity(area_id, entity_description, coordinator)
-
-                entities.append(entity)
-
-        _LOGGER.debug(f"Setting up {_PLATFORM} entities: {entities}")
-
-        async_add_entities(entities, True)
-
-    except Exception as ex:
-        exc_type, exc_obj, tb = sys.exc_info()
-        line_number = tb.tb_lineno
-
-        _LOGGER.error(
-            f"Failed to initialize {_PLATFORM}, Error: {ex}, Line: {line_number}"
-        )
+    await async_setup_base_entry(
+        hass,
+        entry,
+        _PLATFORM,
+        HASelectEntity,
+        async_add_entities,
+    )
 
 
-class HASelectEntity(CoordinatorEntity, SelectEntity):
-    """Representation of a switch."""
+class HASelectEntity(IntegrationBaseEntity, SelectEntity):
+    """Representation of a select."""
 
     def __init__(
         self,
-        area_id: str,
+        hass: HomeAssistant,
         entity_description: HASelectEntityDescription,
         coordinator: HACoordinator,
+        area_id: str,
     ):
-        super().__init__(coordinator)
+        super().__init__(hass, entity_description, coordinator, area_id)
 
-        area_name = coordinator.areas.get(area_id)
-
-        entity_name = f"{area_name} {entity_description.name}"
-
-        unique_id = slugify(f"{entity_description.platform} {entity_name} {area_id}")
-
-        self.entity_description: HASelectEntityDescription = entity_description
-        self._area_id = area_id
-        self._attr_device_info = coordinator.get_device_info(area_id)
-        self._attr_name = entity_name
-        self._attr_unique_id = unique_id
         self._attr_device_class = entity_description.device_class
+        self._attr_current_option = None
+        self._attr_options = entity_description.options
+
+        self._set_parent_context()
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        attributes = {"generated_by": DOMAIN}
 
-        entities = self.coordinator.get_related_entities(
-            self._area_id, self.entity_description
-        )
-
-        native_value = None
-
-        for entity in entities:
-            entity_state = entity[ATTR_STATE]
-            entity_name = entity[ATTR_NAME]
-
-            attributes[entity_name] = entity_state.state
-
-            if native_value is None:
-                native_value = entity_state.state
-
-        self._attr_native_value = native_value
-        self._attr_extra_state_attributes = attributes
+        self._set_parent_context()
 
         self.async_write_ha_state()
 
-    @staticmethod
-    def get_switch_state(current: str, state: str):
-        allowed_state_transitions = ALLOWED_STATE_TRANSITIONS.get(current, [])
+    def _set_parent_context(self):
+        try:
+            if self.entity_description.key == ATTR_PARENT:
+                parent_area_id = self.coordinator.get_area_parent_id(self.area_id)
+                parent_area_name = (
+                    None
+                    if parent_area_id is None
+                    else self.coordinator.get_area_name(parent_area_id)
+                )
 
-        if len(allowed_state_transitions) > 0 and state in allowed_state_transitions:
-            current = state
+                self._attr_current_option = parent_area_name
 
-        return current
+            else:
+                self._attr_current_option = self.coordinator.get_area_details(
+                    self.area_id, self.entity_description
+                )
 
-    def select_option(self, option: str) -> None:
-        self.coordinator.set_state(self._area_id, option, self.entity_description)
+        except Exception as ex:
+            exc_type, exc_obj, tb = sys.exc_info()
+            line_number = tb.tb_lineno
+
+            _LOGGER.error(
+                f"Failed to set parent context for SELECT, Error: {ex}, Line: {line_number}"
+            )
+
+    async def async_select_option(self, option: str) -> None:
+        if self.entity_description.key == ATTR_PARENT:
+            areas_reverse = {
+                self.coordinator.get_area_name(area_id): area_id
+                for area_id in self.coordinator.areas
+            }
+
+            option = areas_reverse.get(option)
+
+            await self.coordinator.set_parent(self.area_id, option)
+        else:
+            await self.coordinator.set_state(
+                self.area_id, option, self.entity_description
+            )

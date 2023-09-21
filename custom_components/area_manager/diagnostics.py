@@ -21,7 +21,7 @@ async def async_get_config_entry_diagnostics(
     """Return diagnostics for a config entry."""
     _LOGGER.debug("Starting diagnostic tool")
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HACoordinator = hass.data[DOMAIN][entry.entry_id]
 
     return _async_get_diagnostics(hass, coordinator, entry)
 
@@ -30,7 +30,7 @@ async def async_get_device_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry, device: DeviceEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a device entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HACoordinator = hass.data[DOMAIN][entry.entry_id]
 
     return _async_get_diagnostics(hass, coordinator, entry, device)
 
@@ -45,10 +45,11 @@ def _async_get_diagnostics(
     """Return diagnostics for a config entry."""
     _LOGGER.debug("Getting diagnostic information")
 
-    config_data = coordinator.config_data
+    config_data = coordinator.config_manager.get_config_data()
 
     data = {
         "areas": coordinator.areas,
+        "entities": coordinator.entities,
         "config": config_data,
         "disabled_by": entry.disabled_by,
         "disabled_polling": entry.pref_disable_polling,

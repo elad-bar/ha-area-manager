@@ -79,6 +79,7 @@ def get_entity_description(
             name=name,
             attributes=attributes,
             include_nested=include_nested,
+            state_class=None,
         )
     elif platform == Platform.BINARY_SENSOR:
         return HABinarySensorEntityDescription(

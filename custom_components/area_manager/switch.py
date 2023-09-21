@@ -4,7 +4,6 @@ Support for sensor
 from __future__ import annotations
 
 import logging
-import sys
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
@@ -17,9 +16,8 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.util import slugify
 
+from .common.base_entity import IntegrationBaseEntity, async_setup_base_entry
 from .common.consts import ALLOWED_STATE_TRANSITIONS, DOMAIN
 from .common.entity_descriptions import HASwitchEntityDescription
 from .managers.ha_coordinator import HACoordinator
@@ -32,53 +30,27 @@ _PLATFORM = Platform.SWITCH
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ):
-    """Set up the sensor platform."""
-    try:
-        coordinator = hass.data[DOMAIN][entry.entry_id]
-        entities = []
-        entity_descriptions = coordinator.get_entity_descriptions(_PLATFORM)
-
-        for entity_description in entity_descriptions:
-            for area_id in coordinator.areas:
-                entity = HASwitchEntity(area_id, entity_description, coordinator)
-
-                entities.append(entity)
-
-        _LOGGER.debug(f"Setting up {_PLATFORM} entities: {entities}")
-
-        async_add_entities(entities, True)
-
-    except Exception as ex:
-        exc_type, exc_obj, tb = sys.exc_info()
-        line_number = tb.tb_lineno
-
-        _LOGGER.error(
-            f"Failed to initialize {_PLATFORM}, Error: {ex}, Line: {line_number}"
-        )
+    await async_setup_base_entry(
+        hass,
+        entry,
+        _PLATFORM,
+        HASwitchEntity,
+        async_add_entities,
+    )
 
 
-class HASwitchEntity(CoordinatorEntity, SwitchEntity):
+class HASwitchEntity(IntegrationBaseEntity, SwitchEntity):
     """Representation of a switch."""
 
     def __init__(
         self,
-        area_id: str,
+        hass: HomeAssistant,
         entity_description: HASwitchEntityDescription,
         coordinator: HACoordinator,
+        area_id: str,
     ):
-        super().__init__(coordinator)
+        super().__init__(hass, entity_description, coordinator, area_id)
 
-        area_name = coordinator.areas.get(area_id)
-
-        entity_name = f"{area_name} {entity_description.name}"
-
-        unique_id = slugify(f"{entity_description.platform} {entity_name} {area_id}")
-
-        self.entity_description: HASwitchEntityDescription = entity_description
-        self._area_id = area_id
-        self._attr_device_info = coordinator.get_device_info(area_id)
-        self._attr_name = entity_name
-        self._attr_unique_id = unique_id
         self._attr_device_class = entity_description.device_class
 
     @callback
@@ -87,7 +59,7 @@ class HASwitchEntity(CoordinatorEntity, SwitchEntity):
         attributes = {"generated_by": DOMAIN}
 
         entities = self.coordinator.get_related_entities(
-            self._area_id, self.entity_description
+            self.area_id, self.entity_description
         )
 
         state = STATE_UNAVAILABLE if len(entities) == 0 else STATE_ON
@@ -114,12 +86,12 @@ class HASwitchEntity(CoordinatorEntity, SwitchEntity):
 
         return current
 
-    def turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         value = kwargs.get(ATTR_STATE)
 
-        self.coordinator.set_state(self._area_id, value, self.entity_description)
+        await self.coordinator.set_state(self.area_id, value, self.entity_description)
 
-    def turn_off(self, **kwargs: Any) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         value = kwargs.get(ATTR_STATE)
 
-        self.coordinator.set_state(self._area_id, value, self.entity_description)
+        await self.coordinator.set_state(self.area_id, value, self.entity_description)
